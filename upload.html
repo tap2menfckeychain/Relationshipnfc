@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tạo Thiệp Kỷ Niệm</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 480px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #f0f2f5;
+      }
+      .box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        text-align: center;
+        color: #c4687a;
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-top: 14px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        margin-top: 6px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 14px;
+      }
+      button {
+        background: #c4687a;
+        color: white;
+        border: none;
+        font-weight: bold;
+        margin-top: 15px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+      button:disabled {
+        background: #aaa;
+        cursor: not-allowed;
+      }
+      .hint {
+        font-size: 12px;
+        color: #777;
+        margin-top: 4px;
+      }
+      .section {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px dashed #ddd;
+      }
+      .section h3 {
+        margin: 0;
+        font-size: 15px;
+        color: #9e3148;
+      }
+      .preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .thumb {
+        position: relative;
+        width: 70px;
+        height: 70px;
+      }
+      .thumb img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+      }
+      .thumb .del,
+      .mini-btn {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 20px;
+        background: #333;
+      }
+      .thumb .del {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+      }
+      #audioBox,
+      #videoBox {
+        display: none;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+      .row span {
+        flex: 1;
+        font-size: 13px;
+        word-break: break-all;
+      }
+      audio,
+      video {
+        width: 100%;
+        margin-top: 8px;
+      }
+      video {
+        max-height: 220px;
+        border-radius: 8px;
+        background: #000;
+      }
+      #result {
+        margin-top: 15px;
+        padding: 12px;
+        background: #eccc68;
+        border-radius: 6px;
+        display: none;
+        word-break: break-all;
+        font-size: 14px;
+      }
+      #copyBtn {
+        background: #2f3542;
+        margin-top: 10px;
+      }
+      details {
+        margin-top: 12px;
+        font-size: 12px;
+      }
+      details summary {
+        cursor: pointer;
+      }
+      #longLink {
+        word-break: break-all;
+        display: block;
+        margin-top: 6px;
+        max-height: 90px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h2>Tạo Thiệp Cá Nhân</h2>
+
+      <form id="uploadForm">
+        <label>Tên của bạn (người gửi):</label>
+        <input type="text" id="senderName" maxlength="40" required />
+
+        <label>Tên người nhận (người ấy / bạn thân):</label>
+        <input type="text" id="receiverName" maxlength="40" required />
+        <div class="hint">Hai tên này cũng dùng trong mục Nhật ký của thiệp.</div>
+
+        <label>Ngày kỷ niệm (không bắt buộc):</label>
+        <input type="date" id="eventDate" />
+
+        <label>Lời nhắn:</label>
+        <textarea id="message" rows="4" maxlength="600" required></textarea>
+
+        <div class="section">
+          <h3>📷 Ảnh kỷ niệm</h3>
+          <input type="file" id="imageInput" accept="image/*" multiple />
+          <div class="hint" id="countHint">Đã chọn 0/6 ảnh (có thể chọn từng ảnh một)</div>
+          <div class="preview-list" id="previewList"></div>
+        </div>
+
+        <div class="section">
+          <h3>🎬 Video (không bắt buộc)</h3>
+          <input type="file" id="videoInput" accept="video/*" />
+          <div class="hint">
+            Nên dùng mp4. Không chọn thì khung video trên thiệp sẽ hiện ảnh đầu
+            tiên.
+          </div>
+          <div id="videoBox">
+            <div class="row">
+              <span id="videoName"></span>
+              <button type="button" class="mini-btn" id="videoDel" title="Bỏ video">×</button>
+            </div>
+            <video id="videoPreview" controls muted playsinline></video>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>🎵 Nhạc nền (không bắt buộc)</h3>
+          <input type="file" id="audioInput" accept="audio/*,.mp3,.m4a" />
+          <div class="hint">
+            Không chọn thì thiệp dùng bài mặc định (Photograph – Ed Sheeran).
+          </div>
+          <div id="audioBox">
+            <div class="row">
+              <span id="audioName"></span>
+              <button type="button" class="mini-btn" id="audioDel" title="Bỏ nhạc">×</button>
+            </div>
+            <audio id="audioPreview" controls></audio>
+
+            <label>Tên bài hát hiển thị trên thiệp:</label>
+            <input type="text" id="songName" maxlength="60" placeholder="VD: Photograph – Ed Sheeran" />
+          </div>
+        </div>
+
+        <button type="submit" id="btnSubmit">Tạo Link Thiệp</button>
+      </form>
+
+      <div id="result">
+        <strong>Link thiệp riêng của khách:</strong><br />
+        <a id="cardLink" href="#" target="_blank" rel="noopener"></a>
+        <div class="hint" id="lenInfo"></div>
+        <button type="button" id="copyBtn">Sao chép link</button>
+
+        <details>
+          <summary>Link dự phòng (dài, dùng khi link ngắn không mở được)</summary>
+          <a id="longLink" href="#" target="_blank" rel="noopener"></a>
+        </details>
+      </div>
+    </div>
+
+    <script>
+      // ====== THÔNG TIN CLOUDINARY (preset phải ở chế độ Unsigned) ======
+      const CLOUD_NAME = "yx8ugl6f";
+      const UPLOAD_PRESET = "Relationship";
+      const MAX_IMAGES = 6;
+      // Nhạc và video: không giới hạn dung lượng ở phía web.
+      // Giới hạn thật là của gói Cloudinary; nếu file quá lớn, Cloudinary sẽ báo lỗi và trang hiện lại thông báo đó.
+
+      const $ = (id) => document.getElementById(id);
+
+      /* ================= ẢNH ================= */
+      let selectedImages = [];
+
+      function renderPreview() {
+        $("previewList").innerHTML = "";
+        selectedImages.forEach((file, idx) => {
+          const wrap = document.createElement("div");
+          wrap.className = "thumb";
+
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+
+          const del = document.createElement("button");
+          del.type = "button";
+          del.className = "del";
+          del.textContent = "×";
+          del.title = "Bỏ ảnh này";
+          del.addEventListener("click", () => {
+            selectedImages.splice(idx, 1);
+            renderPreview();
+          });
+
+          wrap.append(img, del);
+          $("previewList").appendChild(wrap);
+        });
+        $("countHint").textContent =
+          `Đã chọn ${selectedImages.length}/${MAX_IMAGES} ảnh (có thể chọn từng ảnh một)`;
+      }
+
+      $("imageInput").addEventListener("change", (e) => {
+        for (const file of Array.from(e.target.files)) {
+          if (selectedImages.length >= MAX_IMAGES) {
+            alert(`Chỉ được chọn tối đa ${MAX_IMAGES} ảnh.`);
+            break;
+          }
+          selectedImages.push(file);
+        }
+        $("imageInput").value = ""; // cho phép chọn tiếp
+        renderPreview();
+      });
+
+      // Thu nhỏ ảnh (cạnh dài tối đa 1600px) cho tải nhanh
+      async function shrinkImage(file) {
+        try {
+          const bmp = await createImageBitmap(file);
+          const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(bmp.width * scale);
+          canvas.height = Math.round(bmp.height * scale);
+          canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((ok) => canvas.toBlob(ok, "image/jpeg", 0.85));
+          return blob || file;
+        } catch {
+          return file; // định dạng trình duyệt không đọc được -> gửi nguyên bản
+        }
+      }
+
+      /* ================= VIDEO ================= */
+      let selectedVideo = null;
+      let videoUrl = null;
+
+      function clearVideo() {
+        selectedVideo = null;
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        videoUrl = null;
+        $("videoPreview").removeAttribute("src");
+        $("videoBox").style.display = "none";
+        $("videoInput").value = "";
+      }
+
+      $("videoInput").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        selectedVideo = file;
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        videoUrl = URL.createObjectURL(file);
+        $("videoPreview").src = videoUrl;
+        $("videoName").textContent = file.name;
+        $("videoBox").style.display = "block";
+      });
+      $("videoDel").addEventListener("click", clearVideo);
+
+      /* ================= NHẠC ================= */
+      let selectedAudio = null;
+      let audioUrl = null;
+
+      function clearAudio() {
+        selectedAudio = null;
+        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        audioUrl = null;
+        $("audioPreview").removeAttribute("src");
+        $("audioBox").style.display = "none";
+        $("songName").value = "";
+        $("audioInput").value = "";
+      }
+
+      $("audioInput").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        selectedAudio = file;
+        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        audioUrl = URL.createObjectURL(file);
+        $("audioPreview").src = audioUrl;
+        $("audioName").textContent = file.name;
+        $("songName").value = file.name.replace(/\.[^.]+$/, "");
+        $("audioBox").style.display = "block";
+      });
+      $("audioDel").addEventListener("click", clearAudio);
+
+      /* ================= UPLOAD LÊN CLOUDINARY ================= */
+      // resourceType: "image" | "video" (nhạc cũng dùng "video") | "raw" (file JSON)
+      // Trả về đường dẫn gọn, ví dụ: v1712345678/abcdef.jpg
+      async function uploadToCloudinary(fileOrBlob, resourceType, filename) {
+        const formData = new FormData();
+        formData.append("file", fileOrBlob, filename);
+        formData.append("upload_preset", UPLOAD_PRESET);
+
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+          { method: "POST", body: formData },
+        );
+        const data = await res.json();
+        if (!data.secure_url) {
+          throw new Error((data.error && data.error.message) || "không rõ nguyên nhân");
+        }
+        return data.secure_url.split("/upload/")[1]; // phần sau "/upload/"
+      }
+
+      // UTF-8 -> base64url (dùng cho link dài dự phòng)
+      function encodePayload(obj) {
+        const bytes = new TextEncoder().encode(JSON.stringify(obj));
+        let bin = "";
+        bytes.forEach((b) => (bin += String.fromCharCode(b)));
+        return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      }
+
+      // Mã "phòng" ngẫu nhiên: mỗi thiệp có nhật ký riêng
+      function randomRoom(n = 11) {
+        const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        const a = new Uint8Array(n);
+        crypto.getRandomValues(a);
+        // Bắt đầu bằng chữ "r" để Google Sheet không hiểu nhầm mã là con số
+        return "r" + Array.from(a, (b) => chars[b % chars.length]).join("");
+      }
+
+      /* ================= BẤM "TẠO LINK" ================= */
+      $("uploadForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (selectedImages.length === 0) {
+          alert("Vui lòng chọn ít nhất 1 tấm ảnh!");
+          return;
+        }
+
+        const btn = $("btnSubmit");
+        btn.disabled = true;
+
+        try {
+          // 1. Ảnh
+          const imagePaths = [];
+          for (let i = 0; i < selectedImages.length; i++) {
+            btn.innerText = `Đang tải ảnh ${i + 1}/${selectedImages.length}...`;
+            const small = await shrinkImage(selectedImages[i]);
+            try {
+              imagePaths.push(await uploadToCloudinary(small, "image", `anh${i + 1}.jpg`));
+            } catch (err) {
+              throw new Error(`Ảnh ${i + 1} tải lỗi: ${err.message}`);
+            }
+          }
+
+          // 2. Nhạc (nếu có)
+          let audioPath = "";
+          if (selectedAudio) {
+            btn.innerText = "Đang tải nhạc...";
+            try {
+              audioPath = await uploadToCloudinary(selectedAudio, "video", selectedAudio.name);
+            } catch (err) {
+              throw new Error(`Nhạc tải lỗi: ${err.message}`);
+            }
+          }
+
+          // 3. Video (nếu có)
+          let videoPath = "";
+          if (selectedVideo) {
+            btn.innerText = "Đang tải video... (có thể mất vài phút)";
+            try {
+              videoPath = await uploadToCloudinary(selectedVideo, "video", selectedVideo.name);
+            } catch (err) {
+              throw new Error(`Video tải lỗi: ${err.message}`);
+            }
+          }
+
+          // 4. Gom toàn bộ dữ liệu thiệp
+          const payload = {
+            n: $("senderName").value.trim(),
+            n2: $("receiverName").value.trim(),
+            m: $("message").value.trim(),
+            d: $("eventDate").value, // YYYY-MM-DD hoặc ""
+            i: imagePaths,
+            r: randomRoom(), // phòng nhật ký riêng của thiệp này
+          };
+          if (audioPath) {
+            payload.a = audioPath;
+            payload.s = $("songName").value.trim();
+          }
+          if (videoPath) payload.v = videoPath;
+          Object.keys(payload).forEach((k) => {
+            if (payload[k] === "") delete payload[k];
+          });
+
+          // 5. LINK NGẮN: lưu dữ liệu thành 1 file JSON trên Cloudinary, link chỉ chứa mã file
+          btn.innerText = "Đang tạo link...";
+          const jsonBlob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+          let jsonPath = await uploadToCloudinary(jsonBlob, "raw", "card.json");
+          jsonPath = jsonPath.replace(/\.json$/i, ""); // bỏ đuôi cho ngắn (index.html tự thử lại có đuôi)
+
+          const base = new URL("index.html", window.location.href).href;
+          const shortUrl = `${base}?c=${jsonPath}`;
+          const longUrl = `${base}?data=${encodePayload(payload)}`;
+
+          $("cardLink").href = shortUrl;
+          $("cardLink").innerText = shortUrl;
+          $("lenInfo").textContent = `Độ dài link: ${shortUrl.length} ký tự.`;
+
+          $("longLink").href = longUrl;
+          $("longLink").innerText = longUrl;
+
+          $("result").style.display = "block";
+          $("result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } catch (err) {
+          alert("Lỗi: " + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "Tạo Link Thiệp";
+        }
+      });
+
+      $("copyBtn").addEventListener("click", async () => {
+        const url = $("cardLink").href;
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Đã sao chép link!");
+        } catch {
+          prompt("Hãy sao chép link bên dưới:", url);
+        }
+      });
+    </script>
+  </body>
+</html>
